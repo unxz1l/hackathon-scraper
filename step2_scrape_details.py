@@ -14,7 +14,15 @@ OUT_DIR = "results"
 os.makedirs(OUT_DIR, exist_ok=True)  # 如果不存在就自動建立
 
 def get_page_content(url):
-    """獲取頁面內容"""
+    """
+    獲取頁面內容
+    
+    Args:
+        url: 目標網頁URL
+    
+    Returns:
+        網頁文本內容，若請求失敗則返回None
+    """
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
@@ -32,32 +40,42 @@ def get_page_content(url):
         return None
 
 def extract_challenge_info(url, title, company):
-    """從挑戰頁面提取資訊"""
+    """
+    從挑戰頁面提取資訊
+    
+    Args:
+        url: 挑戰頁面URL
+        title: 挑戰標題
+        company: 命題企業名稱
+    
+    Returns:
+        包含挑戰詳情的字典，若提取失敗則返回None
+    """
     content = get_page_content(url)
     if not content:
         return None
     
     soup = BeautifulSoup(content, 'html.parser')
     
-    # 網站資訊
+    # === 3) 提取網站資訊 ===
     company_website = ""
     website_tag = soup.find(string=lambda text: text and "企業官網" in text)
     if website_tag and website_tag.find_next('a'):
         company_website = website_tag.find_next('a')['href']
     
-    # 社群網址
+    # === 4) 提取社群網址 ===
     social_url = ""
     social_tag = soup.find(string=lambda text: text and "社群網址" in text)
     if social_tag and social_tag.find_next('a'):
         social_url = social_tag.find_next('a')['href']
     
-    # 企業介紹
+    # === 5) 提取企業介紹 ===
     company_intro = ""
     intro_tag = soup.find(string=lambda text: text and "企業介紹" in text)
     if intro_tag and intro_tag.find_next('p'):
         company_intro = intro_tag.find_next('p').text.strip()
     
-    # 命題說明
+    # === 6) 提取命題說明 ===
     challenge_description = ""
     desc_tag = soup.find(string=lambda text: text and "命題說明" in text)
     if desc_tag:
@@ -88,7 +106,8 @@ def extract_challenge_info(url, title, company):
     }
 
 def main():
-    # 挑戰資訊列表 (從表格解析)
+    # === 7) 從step1程式的輸出複製來的挑戰資訊列表 ===
+    # 切換年度時，請執行step1_scrape_links.py並複製輸出結果到這裡
     challenges = [
     {'url': 'https://sustainabilityhackathon.fcu.edu.tw/%e9%8a%80%e9%ab%ae%e6%99%ba%e6%85%a7%e7%85%a7%e8%ad%b7/', 'title': '銀髮智慧照護', 'company': '點我看影片'},
     {'url': 'https://sustainabilityhackathon.fcu.edu.tw/%e9%8a%80%e9%ab%ae%e7%ac%ac%e4%b8%89%e4%ba%ba%e7%94%9f/', 'title': '銀髮第三人生', 'company': '點我看影片'},
@@ -109,8 +128,9 @@ def main():
     {'url': 'https://sustainabilityhackathon.fcu.edu.tw/%e6%a8%82%e9%bd%a1%e6%b0%b8%e7%ba%8c%e5%95%86%e6%a5%ad/', 'title': '樂齡永續商業', 'company': '點我看影片'},
     {'url': 'https://sustainabilityhackathon.fcu.edu.tw/%e6%b0%b8%e7%ba%8c%e6%99%ba%e6%85%a7%e5%95%86%e6%a5%ad/', 'title': '永續智慧商業', 'company': '點我看影片'},
     {'url': 'http://sustainabilityhackathon.fcu.edu.tw/%e9%98%b2%e7%96%ab%e6%84%9f%e8%ac%9d%e5%be%ae%e9%9b%bb%e5%bd%b1/', 'title': '防疫感謝微電影特別場', 'company': '點我看影片'}
-]
+    ]
     
+    # === 8) 爬取每個挑戰的詳細資訊 ===
     results = []
     for i, ch in enumerate(challenges, start=1):
         print(f"\n處理 ({i}/{len(challenges)}): {ch['title']}")
@@ -121,13 +141,13 @@ def main():
         else:
             print("✖ 失敗")
 
-    # === 3) 用 pandas 直接存成 CSV ===
+    # === 9) 用 pandas 直接存成 CSV ===
     if results:                       # 確保有資料才寫檔
         df = pd.DataFrame(results)
 
-        csv_path   = os.path.join(OUT_DIR, f"hackathon_{STAMP}.csv")
+        csv_path = os.path.join(OUT_DIR, f"hackathon_{STAMP}.csv")
 
-        df.to_csv(csv_path,   index=False, encoding="utf-8-sig")
+        df.to_csv(csv_path, index=False, encoding="utf-8-sig")
 
         print(f"\n✅ 已寫入：{csv_path}")
         print(f"共 {len(results)} 筆挑戰資訊")
